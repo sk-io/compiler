@@ -186,6 +186,13 @@ AST_Node* parse_expr() {
 }
 
 AST_Node* parse_statement() {
+	if (peek(0).type == TOKEN_OPEN_BRACE) {
+		eat(TOKEN_OPEN_BRACE);
+		AST_Node* block = parse_block();
+		eat(TOKEN_CLOSE_BRACE);
+		return block;
+	}
+
 	if (peek(0).type == TOKEN_KEYWORD_VAR) {
 		eat(TOKEN_KEYWORD_VAR);
 
@@ -214,12 +221,7 @@ AST_Node* parse_statement() {
 		if_stmt->condition = parse_expr();
 		eat(TOKEN_CLOSE_PAREN);
 
-		// fixme: single statement body?
-
-		eat(TOKEN_OPEN_BRACE);
-		if_stmt->body = parse_block();
-		eat(TOKEN_CLOSE_BRACE);
-
+		if_stmt->body = parse_statement();
 		return (AST_Node*) if_stmt;
 	}
 
@@ -233,10 +235,7 @@ AST_Node* parse_statement() {
 		while_stmt->condition = parse_expr();
 		eat(TOKEN_CLOSE_PAREN);
 
-		eat(TOKEN_OPEN_BRACE);
-		while_stmt->body = parse_block();
-		eat(TOKEN_CLOSE_BRACE);
-
+		while_stmt->body = parse_statement();
 		return (AST_Node*) while_stmt;
 	}
 

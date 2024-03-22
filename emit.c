@@ -395,6 +395,7 @@ void emit(AST_Node* root, const char* path) {
 	fprintf(emitter.file, "extern printf ; temporary solution\n");
 	emit_node(root);
 
+	fprintf(emitter.file, "section .rodata\n");
 	// emit all string literals
 	for (u32 i = 0; i < emitter.num_string_literals; i++) {
 		const Token* token = &emitter.string_literals[i];
