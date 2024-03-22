@@ -392,14 +392,33 @@ void emit(AST_Node* root, const char* path) {
 
 	fprintf(emitter.file, "section .text\n");
 	fprintf(emitter.file, "extern exit ; temporary solution\n");
-	fprintf(emitter.file, "extern puts ; temporary solution\n");
-	fprintf(emitter.file, "extern putchar ; temporary solution\n");
 	fprintf(emitter.file, "extern printf ; temporary solution\n");
 	emit_node(root);
 
 	// emit all string literals
 	for (u32 i = 0; i < emitter.num_string_literals; i++) {
-		fprintf(emitter.file, "_str%u: db 'hello', 0\n", i);
+		const Token* token = &emitter.string_literals[i];
+
+		fprintf(emitter.file, "_str%u: db ", i);
+
+		// convert to nasm string
+		u32 pos = 1; // skip first "
+		while (pos < token->len - 1) {
+			if (token->str[pos] == '\\') {
+				if (pos + 1 >= token->len - 1 || token->str[pos + 1] != 'n') {
+					printf("emit error: invalid escape character");
+					error();
+				}
+
+				fprintf(emitter.file, "10, ");
+				pos += 2;
+				continue;
+			}
+
+			fprintf(emitter.file, "%u, ", (u32)token->str[pos]);
+			pos++;
+		}
+		fprintf(emitter.file, "0\n");
 	}
 
 	fclose(emitter.file);
