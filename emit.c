@@ -4,14 +4,25 @@ stack_loc emit_node(AST_Node* node);
 
 static Emit_State emitter = {0};
 
+static const char* sysv_call_regs[MAX_ARGS] = {
+	"rdi", "rsi", "rdx", "rcx", "r8", "r9"
+};
+
 static u32 get_required_stack_size(AST_Node* node) {
 	switch (node->type) {
 		case AST_VAR:
 			return 0;
 		case AST_INT_LITERAL:
 		case AST_STR_LITERAL:
-		case AST_FUNC_CALL:
 			return 1;
+		case AST_FUNC_CALL: {
+			AST_Func_Call* call = (AST_Func_Call*) node;
+			u32 sum = 1; // 1 for return value
+			for (u32 i = 0; i < call->num_args; i++) {
+				sum += get_required_stack_size(call->args[i]);
+			}
+			return sum;
+		}
 		case AST_BIN_OP: {
 			AST_Binary_Op* op = (AST_Binary_Op*) node;
 			stack_loc left = get_required_stack_size(op->left);
@@ -224,6 +235,13 @@ void emit_func_decl(AST_Func_Decl* node) {
 	// for variables, arguments and temporary values.
 	u32 required_stack_alloc = get_required_stack_size((AST_Node*) node) * 8;
 
+	// align the stack to 16 bytes
+	// (sysv amd64 abi requires this)
+	if (required_stack_alloc & 0b1111) {
+		required_stack_alloc &= ~0b1111;
+		required_stack_alloc += 16;
+	}
+
 	// reset the context, clear any previous local variables etc.
 	memset(&emitter.context, 0, sizeof(Local_Context));
 	emitter.context.alloc = 1; // start at ebp - 8
@@ -244,13 +262,13 @@ void emit_func_decl(AST_Func_Decl* node) {
 		arg_vars[i] = var;
 	}
 
-	// todo: sysv abi
-	if (node->num_args >= 1)
-		fprintf(emitter.file, "	mov qword [rbp - %u], rcx\n", arg_vars[0]->location * 8);
-	if (node->num_args >= 2)
-		fprintf(emitter.file, "	mov qword [rbp - %u], rdx\n", arg_vars[1]->location * 8);
-	if (node->num_args > 2) {
-		printf("emit_func_decl error\n");
+	// copy arguments from registers into stack
+	for (u32 i = 0; i < node->num_args; i++) {
+		fprintf(emitter.file, "	mov qword [rbp - %u], %s\n", arg_vars[i]->location * 8, sysv_call_regs[i]);
+	}
+
+	if (node->num_args > MAX_ARGS) {
+		printf("emit_func_decl error: too many args\n");
 		error();
 	}
 
@@ -268,21 +286,24 @@ stack_loc emit_func_call(AST_Func_Call* call) {
 
 	stack_loc result_loc = allocate_stack();
 
+	// emit code for evaluating the arguments
 	stack_loc locs[MAX_ARGS];
 	for (u32 i = 0; i < call->num_args; i++) {
 		locs[i] = emit_node(call->args[i]);
 	}
 
-	// fixme: use sysv abi
-	if (call->num_args >= 1)
-		fprintf(emitter.file, "	mov rcx, qword [rbp - %u]\n", locs[0] * 8);
-	if (call->num_args >= 2)
-		fprintf(emitter.file, "	mov rdx, qword [rbp - %u]\n", locs[1] * 8);
-	if (call->num_args > 2) {
-		printf("emit_func_call error\n");
+	if (call->num_args > MAX_ARGS) {
+		printf("emit_func_call error: too many args\n");
 		error();
 	}
+
+	// copy arguments from stack into registers
+	for (u32 i = 0; i < call->num_args; i++) {
+		fprintf(emitter.file, "	mov %s, qword [rbp - %u]\n", sysv_call_regs[i], locs[i] * 8);
+	}
+	
 	fprintf(emitter.file, "	call %.*s\n", call->name.len, call->name.str);
+	// move return value into temporary
 	fprintf(emitter.file, "	mov qword [rbp - %u], rax\n", result_loc * 8);
 	return result_loc;
 }
@@ -373,6 +394,7 @@ void emit(AST_Node* root, const char* path) {
 	fprintf(emitter.file, "extern exit ; temporary solution\n");
 	fprintf(emitter.file, "extern puts ; temporary solution\n");
 	fprintf(emitter.file, "extern putchar ; temporary solution\n");
+	fprintf(emitter.file, "extern printf ; temporary solution\n");
 	emit_node(root);
 
 	// emit all string literals

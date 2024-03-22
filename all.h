@@ -144,7 +144,7 @@ typedef struct {
 	AST_Node* rhs;
 } AST_Assign;
 
-#define MAX_ARGS 16
+#define MAX_ARGS 6
 
 typedef struct {
 	AST_Type type;
