@@ -24,6 +24,16 @@ void lex(const char* input, u32 input_length, Token* tokens, u32* num_tokens) {
 			continue;
 		}
 
+		// ignore comments
+		if (ch == '/' && input[pos + 1] == '/') {
+			while (input[pos] != '\n') {
+				pos++;
+			}
+			token_start = pos;
+			continue;
+		}
+
+		// determine token type based on first char
 		if (isalpha(ch)) {
 			token_type = TOKEN_IDENT;
 			while (isalnum(input[pos + 1])) {
