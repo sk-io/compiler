@@ -2,7 +2,7 @@
 
 int main(int argc, char* argv[]) {
 	if (argc <= 1) {
-		printf("lang <file>\n");
+		printf("usage: compiler <source file>\n");
 		error();
 	}
 
