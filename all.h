@@ -7,6 +7,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define MAX_TOKENS 1024
+#define MAX_ARGS 6
+#define MAX_VARS 64
+#define MAX_STRING_LITERALS 64
+
 typedef int8_t  s8;
 typedef int16_t s16;
 typedef int32_t s32;
@@ -16,6 +21,8 @@ typedef uint8_t  u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t u64;
+
+typedef u32 stack_loc;
 
 typedef enum {
 	TOKEN_NONE,
@@ -29,9 +36,9 @@ typedef enum {
 	TOKEN_IS_EQUAL,
 	TOKEN_NOT_EQUAL,
 	TOKEN_GREATER_THAN,
+	TOKEN_GREATER_THAN_EQUAL,
 	TOKEN_LESS_THAN,
-	TOKEN_GREATER_THAN_EQUALS,
-	TOKEN_LESS_THAN_EQUALS,
+	TOKEN_LESS_THAN_EQUAL,
 	TOKEN_OPEN_PAREN,
 	TOKEN_CLOSE_PAREN,
 	TOKEN_OPEN_BRACE,
@@ -53,8 +60,6 @@ typedef struct {
 	u32 len;
 } Token;
 
-#define MAX_TOKENS 1024
-
 typedef struct {
 	char* program;
 
@@ -64,6 +69,19 @@ typedef struct {
 
 	u32 pos;
 } Parse_State;
+
+typedef enum {
+	OP_ADD,
+	OP_SUB,
+	OP_MUL,
+	OP_DIV,
+	OP_EQUALS,
+	OP_NOT_EQUALS,
+	OP_GREATER_THAN,
+	OP_LESS_THAN,
+	OP_GREATER_THAN_EQUAL,
+	OP_LESS_THAN_EQUAL,
+} Binary_Operation;
 
 typedef enum {
 	AST_PROGRAM,
@@ -102,17 +120,6 @@ typedef struct {
 	Token token;
 } AST_String;
 
-typedef enum {
-	OP_ADD,
-	OP_SUB,
-	OP_MUL,
-	OP_DIV,
-	OP_EQUALS,
-	OP_NOT_EQUALS,
-	OP_GREATER_THAN,
-	OP_LESS_THAN,
-} Binary_Operation;
-
 typedef struct {
 	AST_Type type;
 	Binary_Operation op;
@@ -144,8 +151,6 @@ typedef struct {
 	AST_Node* rhs;
 } AST_Assign;
 
-#define MAX_ARGS 6
-
 typedef struct {
 	AST_Type type;
 	Token name;
@@ -172,15 +177,10 @@ typedef struct {
 	AST_Node* expr;
 } AST_Return;
 
-typedef u32 stack_loc;
-
 typedef struct {
 	Token token;
 	stack_loc location;
 } Variable;
-
-#define MAX_VARS 64
-#define MAX_STRING_LITERALS 64
 
 typedef struct {
 	Variable vars[MAX_VARS];

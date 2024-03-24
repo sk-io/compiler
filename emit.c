@@ -128,7 +128,13 @@ stack_loc emit_binary_op(AST_Binary_Op* op, stack_loc left, stack_loc right) {
 
 	// todo: clean this up
 
-	if (op->op == OP_EQUALS || op->op == OP_NOT_EQUALS) {
+	// handle comparisons
+	if (op->op == OP_EQUALS ||
+		op->op == OP_NOT_EQUALS ||
+		op->op == OP_LESS_THAN ||
+		op->op == OP_LESS_THAN_EQUAL ||
+		op->op == OP_GREATER_THAN ||
+		op->op == OP_GREATER_THAN_EQUAL) {
 		fprintf(emitter.file, "	xor rax, rax\n");
 		fprintf(emitter.file, "	mov rcx, qword [rbp - %u]\n", left * 8);
 		fprintf(emitter.file, "	cmp rcx, qword [rbp - %u]\n", right * 8);
@@ -136,6 +142,14 @@ stack_loc emit_binary_op(AST_Binary_Op* op, stack_loc left, stack_loc right) {
 			fprintf(emitter.file, "	sete al\n");
 		if (op->op == OP_NOT_EQUALS)
 			fprintf(emitter.file, "	setne al\n");
+		if (op->op == OP_LESS_THAN)
+			fprintf(emitter.file, "	setl al\n");
+		if (op->op == OP_LESS_THAN_EQUAL)
+			fprintf(emitter.file, "	setle al\n");
+		if (op->op == OP_GREATER_THAN)
+			fprintf(emitter.file, "	setg al\n");
+		if (op->op == OP_GREATER_THAN_EQUAL)
+			fprintf(emitter.file, "	setge al\n");
 		
 		fprintf(emitter.file, "	mov qword [rbp - %u], rax\n", location * 8);
 		return location;

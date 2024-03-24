@@ -13,12 +13,17 @@ static u32 get_precedence(Token_Type token_type) {
 		case TOKEN_IS_EQUAL:
 		case TOKEN_NOT_EQUAL:
 			return 1;
+		case TOKEN_LESS_THAN:
+		case TOKEN_GREATER_THAN:
+		case TOKEN_LESS_THAN_EQUAL:
+		case TOKEN_GREATER_THAN_EQUAL:
+			return 2;
 		case TOKEN_ADD:
 		case TOKEN_SUB:
-			return 2;
+			return 3;
 		case TOKEN_MUL:
 		case TOKEN_DIV:
-			return 3;
+			return 4;
 		default:
 			printf("uhh thats not an operator\n");
 			error();
@@ -35,6 +40,10 @@ static bool is_binary_op(Token_Type token_type) {
 		case TOKEN_DIV:
 		case TOKEN_IS_EQUAL:
 		case TOKEN_NOT_EQUAL:
+		case TOKEN_LESS_THAN:
+		case TOKEN_GREATER_THAN:
+		case TOKEN_LESS_THAN_EQUAL:
+		case TOKEN_GREATER_THAN_EQUAL:
 			return true;
 		default:
 			return false;
@@ -56,6 +65,14 @@ static Binary_Operation token_to_binary_op(Token_Type token_type) {
 			return OP_EQUALS;
 		case TOKEN_NOT_EQUAL:
 			return OP_NOT_EQUALS;
+		case TOKEN_LESS_THAN:
+			return OP_LESS_THAN;
+		case TOKEN_GREATER_THAN:
+			return OP_GREATER_THAN;
+		case TOKEN_LESS_THAN_EQUAL:
+			return OP_LESS_THAN_EQUAL;
+		case TOKEN_GREATER_THAN_EQUAL:
+			return OP_GREATER_THAN_EQUAL;
 		default:
 			printf("error in token_to_binary_op\n");
 			error();

@@ -77,8 +77,18 @@ void lex(const char* input, u32 input_length, Token* tokens, u32* num_tokens) {
 			token_type = TOKEN_CLOSE_BRACE;
 		} else if (ch == ',') {
 			token_type = TOKEN_COMMA;
+		} else if (ch == '<') {
+			token_type = TOKEN_LESS_THAN;
+			if (input[pos + 1] == '=') {
+				token_type = TOKEN_LESS_THAN_EQUAL;
+				pos++;
+			}
 		} else if (ch == '>') {
 			token_type = TOKEN_GREATER_THAN;
+			if (input[pos + 1] == '=') {
+				token_type = TOKEN_GREATER_THAN_EQUAL;
+				pos++;
+			}
 		} else if (ch == '!') {
 			if (input[pos + 1] == '=') {
 				token_type = TOKEN_NOT_EQUAL;
